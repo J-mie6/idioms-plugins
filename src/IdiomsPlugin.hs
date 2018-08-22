@@ -177,7 +177,7 @@ data BT a = Leaf a | Branch (BT a) a (BT a)
 -- flatten: note that leaf is returned as is.
 idiomBT :: BT (LHsExpr GhcPs) -> LHsExpr GhcPs
 idiomBT (Leaf x)            = x
-idiomBT (Branch lhs op rhs) = fmapExpr op (idiomBT lhs) `apExpr` idiomBT rhs
+idiomBT (Branch lhs op rhs) = pureExpr op `apExpr` idiomBT lhs `apExpr` idiomBT rhs
 
 -------------------------------------------------------------------------------
 -- List Comprehension
