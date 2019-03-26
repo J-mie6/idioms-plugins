@@ -96,7 +96,7 @@ pureExpr (L l f) =
     l' = GHC.noSrcSpan
 
 pureRdrName :: GHC.RdrName
-pureRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc "pure")
+pureRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc "lift'")
 
 -- x y ~> x <|> y
 altExpr :: LHsExpr GhcPs -> LHsExpr GhcPs -> LHsExpr GhcPs
