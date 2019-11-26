@@ -4,7 +4,7 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Data.Foldable          (for_)
 import Data.List              (foldl')
 import Data.List.NonEmpty     (NonEmpty (..))
-import Data.Traversable       (for)
+--import Data.Traversable       (for)
 
 import qualified Data.Generics as SYB
 
@@ -48,14 +48,14 @@ transform dflags = SYB.everywhereM (SYB.mkM transform') where
                     GHC.$$
                     GHC.ppr exprs
                 return e
-    transform' (L l (HsPar _ (L l' (HsDo _ ListComp (L _ stmts)))))
+    {-transform' (L l (HsPar _ (L l' (HsDo _ ListComp (L _ stmts)))))
         | inside l l', Just exprs <- matchListComp stmts = do
             for_ exprs $ \expr ->
                 debug $ "ALT: " ++ GHC.showPpr dflags expr
 --            for_ (zip stmts [0..]) $ \(stmt, i) -> do
 --                debug $ show i ++ " ==> " ++ SYB.gshow stmt
             exprs' <- traverse (transformExpr dflags) exprs
-            return (foldr1 altExpr exprs')
+            return (foldr1 altExpr exprs')-}
     transform' expr =
         return expr
 
@@ -80,7 +80,7 @@ transformExpr dflags expr = do
     debug $ "FUN+: " ++ GHC.showPpr dflags f'
     for_ (zip args args) $ \arg ->
         debug $ "ARG : " ++ GHC.showPpr dflags arg
-    let result = foldl' apply f' args
+    let result = foldl' apExpr f' args
     debug $ "RES : " ++ GHC.showPpr dflags result
     return result
 
@@ -96,27 +96,17 @@ pureExpr (L l f) =
     l' = GHC.noSrcSpan
 
 pureRdrName :: GHC.RdrName
-pureRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc "lift'")
+pureRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc "code")
 
 -- x y ~> x <|> y
-altExpr :: LHsExpr GhcPs -> LHsExpr GhcPs -> LHsExpr GhcPs
+{-altExpr :: LHsExpr GhcPs -> LHsExpr GhcPs -> LHsExpr GhcPs
 altExpr x y =
     L l' $ OpApp NoExt x (L l' (HsVar NoExt (L l' altRdrName))) y
   where
     l' = GHC.noSrcSpan
 
 altRdrName :: GHC.RdrName
-altRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc "<|>")
-
--- f x ~> f <$> x
-fmapExpr :: LHsExpr GhcPs -> LHsExpr GhcPs -> LHsExpr GhcPs
-fmapExpr f x =
-    L l' $ OpApp NoExt f (L l' (HsVar NoExt (L l' fmapRdrName))) x
-  where
-    l' = GHC.noSrcSpan
-
-fmapRdrName :: GHC.RdrName
-fmapRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc "<$>")
+altRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc "<|>")-}
 
 -- f x ~> f <*> x
 apExpr :: LHsExpr GhcPs -> LHsExpr GhcPs -> LHsExpr GhcPs
@@ -126,26 +116,26 @@ apExpr f x =
     l' = GHC.noSrcSpan
 
 apRdrName :: GHC.RdrName
-apRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc "<*>")
+apRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc ">*<")
 
 -- f x -> f <* x
-birdExpr :: LHsExpr GhcPs -> LHsExpr GhcPs -> LHsExpr GhcPs
+{-birdExpr :: LHsExpr GhcPs -> LHsExpr GhcPs -> LHsExpr GhcPs
 birdExpr f x =
     L l' $ OpApp NoExt f (L l' (HsVar NoExt (L l' birdRdrName))) x
   where
     l' = GHC.noSrcSpan
 
 birdRdrName :: GHC.RdrName
-birdRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc "<*")
+birdRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc "<*")-}
 
 -- f x -y z  ->  (((pure f <*> x) <* y) <*> z)
-apply :: LHsExpr GhcPs -> LHsExpr GhcPs -> LHsExpr GhcPs
+{-apply :: LHsExpr GhcPs -> LHsExpr GhcPs -> LHsExpr GhcPs
 apply f (L _ (HsPar _ (L _ (HsApp _ (L _ (HsVar _ (L _ voidName'))) x))))
     | voidName' == voidName = birdExpr f x
 apply f x                   = apExpr f x
 
 voidName :: GHC.RdrName
-voidName = GHC.mkRdrUnqual (GHC.mkVarOcc "void")
+voidName = GHC.mkRdrUnqual (GHC.mkVarOcc "void")-}
 
 -------------------------------------------------------------------------------
 -- Function application maching
@@ -183,7 +173,7 @@ idiomBT (Branch lhs op rhs) = pureExpr op `apExpr` idiomBT lhs `apExpr` idiomBT 
 -- List Comprehension
 -------------------------------------------------------------------------------
 
-matchListComp :: [LStmt GhcPs (LHsExpr GhcPs)] -> Maybe [LHsExpr GhcPs]
+{-matchListComp :: [LStmt GhcPs (LHsExpr GhcPs)] -> Maybe [LHsExpr GhcPs]
 matchListComp [L _ (BodyStmt _ expr2 _ _), L _ (LastStmt _ expr1 _ _)] =
     Just [expr1, expr2]
 matchListComp [L _ (ParStmt _ blocks _ _), L _ (LastStmt _ expr1 _ _)] = do
@@ -191,7 +181,7 @@ matchListComp [L _ (ParStmt _ blocks _ _), L _ (LastStmt _ expr1 _ _)] = do
         ParStmtBlock _ [L _ (BodyStmt _ e _ _)] _ _ -> Just e
         _ -> Nothing
     return $ expr1 : exprs
-matchListComp _ = Nothing
+matchListComp _ = Nothing-}
 
 -------------------------------------------------------------------------------
 -- Location checker
