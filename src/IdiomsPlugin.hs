@@ -49,14 +49,6 @@ transform dflags = SYB.everywhereM (SYB.mkM transform') where
                     GHC.$$
                     GHC.ppr exprs
                 return e
-    {-transform' (L l (HsPar _ (L l' (HsDo _ ListComp (L _ stmts)))))
-        | inside l l', Just exprs <- matchListComp stmts = do
-            for_ exprs $ \expr ->
-                debug $ "ALT: " ++ GHC.showPpr dflags expr
---            for_ (zip stmts [0..]) $ \(stmt, i) -> do
---                debug $ show i ++ " ==> " ++ SYB.gshow stmt
-            exprs' <- traverse (transformExpr dflags) exprs
-            return (foldr1 altExpr exprs')-}
     transform' expr =
         return expr
 
@@ -99,16 +91,6 @@ pureExpr (L l f) =
 pureRdrName :: GHC.RdrName
 pureRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc "code")
 
--- x y ~> x <|> y
-{-altExpr :: LHsExpr GhcPs -> LHsExpr GhcPs -> LHsExpr GhcPs
-altExpr x y =
-    L l' $ OpApp NoExt x (L l' (HsVar NoExt (L l' altRdrName))) y
-  where
-    l' = GHC.noSrcSpan
-
-altRdrName :: GHC.RdrName
-altRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc "<|>")-}
-
 -- f x ~> f <*> x
 apExpr :: LHsExpr GhcPs -> LHsExpr GhcPs -> LHsExpr GhcPs
 apExpr f x =
@@ -118,25 +100,6 @@ apExpr f x =
 
 apRdrName :: GHC.RdrName
 apRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc ">*<")
-
--- f x -> f <* x
-{-birdExpr :: LHsExpr GhcPs -> LHsExpr GhcPs -> LHsExpr GhcPs
-birdExpr f x =
-    L l' $ OpApp NoExt f (L l' (HsVar NoExt (L l' birdRdrName))) x
-  where
-    l' = GHC.noSrcSpan
-
-birdRdrName :: GHC.RdrName
-birdRdrName = GHC.mkRdrUnqual (GHC.mkVarOcc "<*")-}
-
--- f x -y z  ->  (((pure f <*> x) <* y) <*> z)
-{-apply :: LHsExpr GhcPs -> LHsExpr GhcPs -> LHsExpr GhcPs
-apply f (L _ (HsPar _ (L _ (HsApp _ (L _ (HsVar _ (L _ voidName'))) x))))
-    | voidName' == voidName = birdExpr f x
-apply f x                   = apExpr f x
-
-voidName :: GHC.RdrName
-voidName = GHC.mkRdrUnqual (GHC.mkVarOcc "void")-}
 
 -------------------------------------------------------------------------------
 -- Function application maching
@@ -169,20 +132,6 @@ data BT a = Leaf a | Branch (BT a) a (BT a)
 idiomBT :: BT (LHsExpr GhcPs) -> LHsExpr GhcPs
 idiomBT (Leaf x)            = x
 idiomBT (Branch lhs op rhs) = pureExpr op `apExpr` idiomBT lhs `apExpr` idiomBT rhs
-
--------------------------------------------------------------------------------
--- List Comprehension
--------------------------------------------------------------------------------
-
-{-matchListComp :: [LStmt GhcPs (LHsExpr GhcPs)] -> Maybe [LHsExpr GhcPs]
-matchListComp [L _ (BodyStmt _ expr2 _ _), L _ (LastStmt _ expr1 _ _)] =
-    Just [expr1, expr2]
-matchListComp [L _ (ParStmt _ blocks _ _), L _ (LastStmt _ expr1 _ _)] = do
-    exprs <- for blocks $ \bl -> case bl of
-        ParStmtBlock _ [L _ (BodyStmt _ e _ _)] _ _ -> Just e
-        _ -> Nothing
-    return $ expr1 : exprs
-matchListComp _ = Nothing-}
 
 -------------------------------------------------------------------------------
 -- Location checker
