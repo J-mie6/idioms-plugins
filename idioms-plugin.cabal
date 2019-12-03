@@ -9,8 +9,8 @@ library
   exposed-modules:
     IdiomsPlugin
   build-depends:
-    , base ^>=4.12
-    , ghc ^>=8.6
+    , base >=4.12
+    , ghc >=8.6
     , syb
 
 test-suite example
