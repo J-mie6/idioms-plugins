@@ -4,13 +4,11 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Data.Foldable          (for_)
 import Data.List              (foldl')
 import Data.List.NonEmpty     (NonEmpty (..))
---import Data.Traversable       (for)
 
 import qualified Data.Generics as SYB
 
 import qualified ErrUtils    as Err
 import qualified GhcPlugins  as GHC
-import           HsExtension (GhcPs, NoExt (..))
 import           HsSyn
 import           SrcLoc
 
