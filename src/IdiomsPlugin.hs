@@ -1,3 +1,7 @@
+{-# LANGUAGE CPP #-}
+#if __GLASGOW_HASKELL__ >= 810
+{-# LANGUAGE PatternSynonyms #-}
+#endif
 module IdiomsPlugin (plugin) where
 
 import Control.Monad.IO.Class (MonadIO (..))
@@ -9,8 +13,17 @@ import qualified Data.Generics as SYB
 
 import qualified ErrUtils    as Err
 import qualified GhcPlugins  as GHC
+#if __GLASGOW_HASKELL__ < 810
 import           HsSyn
+#else
+import           GHC.Hs
+#endif
 import           SrcLoc
+
+#if __GLASGOW_HASKELL__ >= 810
+pattern NoExt :: NoExtField
+pattern NoExt = NoExtField
+#endif
 
 plugin :: GHC.Plugin
 plugin = GHC.defaultPlugin
